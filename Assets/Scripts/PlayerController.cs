@@ -1,6 +1,15 @@
 using UnityEngine;
 
+<<<<<<< HEAD
 [RequireComponent(typeof(Rigidbody2D))]
+=======
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
+
+[RequireComponent(typeof(Rigidbody2D))]
+[RequireComponent(typeof(CapsuleCollider2D))]
+>>>>>>> 3b69d0752b8c4aea98770e5503f477579eb912c7
 [RequireComponent(typeof(Animator))]
 public class PlayerController : MonoBehaviour
 {
@@ -23,9 +32,15 @@ public class PlayerController : MonoBehaviour
     [SerializeField] float jumpBufferTime    = 0.15f;
 
     [Header("── Dash ──")]
+<<<<<<< HEAD
     [SerializeField] float dashSpeed      = 24f;
     [SerializeField] float dashDuration   = 0.18f;
     [SerializeField] float dashCooldown   = 0.55f;
+=======
+    [SerializeField] float dashSpeed     = 24f;
+    [SerializeField] float dashDuration  = 0.18f;
+    [SerializeField] float dashCooldown  = 0.55f;
+>>>>>>> 3b69d0752b8c4aea98770e5503f477579eb912c7
     [SerializeField] bool  dashInvincible = true;
 
     [Header("── Wall Slide ──")]
@@ -53,10 +68,21 @@ public class PlayerController : MonoBehaviour
     [SerializeField] ParticleSystem divineAuraParticles;
 
     // Componentler
+<<<<<<< HEAD
     Rigidbody2D    rb;
     Animator       anim;
     Collider2D     col;
     SpriteRenderer sr;
+=======
+    Rigidbody2D       rb;
+    Animator          anim;
+    CapsuleCollider2D col;
+    SpriteRenderer    sr;
+
+#if ENABLE_INPUT_SYSTEM
+    PlayerInputActions inputActions;
+#endif
+>>>>>>> 3b69d0752b8c4aea98770e5503f477579eb912c7
 
     // Durum değişkenleri
     float moveInput;
@@ -93,7 +119,11 @@ public class PlayerController : MonoBehaviour
     public bool  IsGrounded    => isGrounded;
     public bool  IsDashing     => isDashing;
 
+<<<<<<< HEAD
     // Animator hash'leri
+=======
+    // Animator hash'leri (performans için önbellek)
+>>>>>>> 3b69d0752b8c4aea98770e5503f477579eb912c7
     static readonly int H_Speed       = Animator.StringToHash("Speed");
     static readonly int H_IsGrounded  = Animator.StringToHash("IsGrounded");
     static readonly int H_IsFalling   = Animator.StringToHash("IsFalling");
@@ -113,10 +143,40 @@ public class PlayerController : MonoBehaviour
     {
         rb   = GetComponent<Rigidbody2D>();
         anim = GetComponent<Animator>();
+<<<<<<< HEAD
         col  = GetComponent<Collider2D>();
         sr   = GetComponent<SpriteRenderer>();
 
         divineFire = divineFireMax * 0.5f;
+=======
+        col  = GetComponent<CapsuleCollider2D>();
+        sr   = GetComponent<SpriteRenderer>();
+
+        divineFire = divineFireMax * 0.5f;
+
+#if ENABLE_INPUT_SYSTEM
+        inputActions = new PlayerInputActions();
+#endif
+    }
+
+    void OnEnable()
+    {
+#if ENABLE_INPUT_SYSTEM
+        inputActions.Enable();
+        inputActions.Player.Jump.performed       += _ => jumpPressed       = true;
+        inputActions.Player.Jump.canceled        += _ => OnJumpReleased();
+        inputActions.Player.Dash.performed       += _ => dashPressed       = true;
+        inputActions.Player.Attack.performed     += _ => attackPressed     = true;
+        inputActions.Player.FireAttack.performed += _ => fireAttackPressed = true;
+#endif
+    }
+
+    void OnDisable()
+    {
+#if ENABLE_INPUT_SYSTEM
+        inputActions?.Disable();
+#endif
+>>>>>>> 3b69d0752b8c4aea98770e5503f477579eb912c7
     }
 
     void Update()
@@ -143,6 +203,13 @@ public class PlayerController : MonoBehaviour
 
     void ReadInput()
     {
+<<<<<<< HEAD
+=======
+#if ENABLE_INPUT_SYSTEM
+        moveInput = inputActions.Player.Move.ReadValue<Vector2>().x;
+        jumpHeld  = inputActions.Player.Jump.IsPressed();
+#else
+>>>>>>> 3b69d0752b8c4aea98770e5503f477579eb912c7
         moveInput = Input.GetAxisRaw("Horizontal");
         jumpHeld  = Input.GetButton("Jump");
 
@@ -151,6 +218,10 @@ public class PlayerController : MonoBehaviour
             Input.GetKeyDown(KeyCode.RightShift))                         dashPressed       = true;
         if (Input.GetKeyDown(KeyCode.Z))                                  attackPressed     = true;
         if (Input.GetKeyDown(KeyCode.X))                                  fireAttackPressed = true;
+<<<<<<< HEAD
+=======
+#endif
+>>>>>>> 3b69d0752b8c4aea98770e5503f477579eb912c7
     }
 
     void ClearFrameInput()
@@ -175,11 +246,19 @@ public class PlayerController : MonoBehaviour
             StartCoroutine(DashRoutine());
 
         if (attackPressed)
+<<<<<<< HEAD
             SafeTrigger(H_Attack);
 
         if (fireAttackPressed && divineFire >= divineFireCost)
         {
             SafeTrigger(H_FireAttack);
+=======
+            anim.SetTrigger(H_Attack);
+
+        if (fireAttackPressed && divineFire >= divineFireCost)
+        {
+            anim.SetTrigger(H_FireAttack);
+>>>>>>> 3b69d0752b8c4aea98770e5503f477579eb912c7
             divineFire = Mathf.Max(0f, divineFire - divineFireCost);
         }
     }
@@ -240,13 +319,22 @@ public class PlayerController : MonoBehaviour
 
     void TryJump()
     {
+<<<<<<< HEAD
         if (isWallSliding)                  { DoWallJump();            return; }
         if (isGrounded || coyoteTimer > 0f) { DoJump(jumpForce); canDoubleJump = true; return; }
+=======
+        if (isWallSliding)                        { DoWallJump();            return; }
+        if (isGrounded || coyoteTimer > 0f)       { DoJump(jumpForce); canDoubleJump = true; return; }
+>>>>>>> 3b69d0752b8c4aea98770e5503f477579eb912c7
         if (canDoubleJump)
         {
             DoJump(doubleJumpForce);
             canDoubleJump = false;
+<<<<<<< HEAD
             SafeTrigger(H_DoubleJump);
+=======
+            anim.SetTrigger(H_DoubleJump);
+>>>>>>> 3b69d0752b8c4aea98770e5503f477579eb912c7
             if (doubleJumpParticles != null) doubleJumpParticles.Play();
         }
     }
@@ -257,7 +345,11 @@ public class PlayerController : MonoBehaviour
         isJumping          = true;
         coyoteTimer        = 0f;
         jumpBufferTimer    = 0f;
+<<<<<<< HEAD
         SafeTrigger(H_Jump);
+=======
+        anim.SetTrigger(H_Jump);
+>>>>>>> 3b69d0752b8c4aea98770e5503f477579eb912c7
     }
 
     void DoWallJump()
@@ -268,7 +360,11 @@ public class PlayerController : MonoBehaviour
         wallJumpTimer     = wallJumpLockTime;
         canDoubleJump     = true;
         if ((dir > 0 && !isFacingRight) || (dir < 0 && isFacingRight)) Flip();
+<<<<<<< HEAD
         SafeTrigger(H_WallJump);
+=======
+        anim.SetTrigger(H_WallJump);
+>>>>>>> 3b69d0752b8c4aea98770e5503f477579eb912c7
     }
 
     void OnJumpReleased()
@@ -289,15 +385,27 @@ public class PlayerController : MonoBehaviour
         rb.gravityScale   = 0f;
         rb.linearVelocity = new Vector2(dir * dashSpeed, 0f);
 
+<<<<<<< HEAD
+=======
+        anim.SetBool(H_IsDashing, true);
+>>>>>>> 3b69d0752b8c4aea98770e5503f477579eb912c7
         if (dashInvincible)        SetInvincible(true);
         if (dashParticles != null) dashParticles.Play();
 
         yield return new WaitForSeconds(dashDuration);
 
+<<<<<<< HEAD
         rb.gravityScale     = prevGravity;
         rb.linearVelocityX *= 0.35f;
         isDashing           = false;
 
+=======
+        rb.gravityScale    = prevGravity;
+        rb.linearVelocityX *= 0.35f;
+        isDashing           = false;
+
+        anim.SetBool(H_IsDashing, false);
+>>>>>>> 3b69d0752b8c4aea98770e5503f477579eb912c7
         if (dashInvincible)        SetInvincible(false);
         if (dashParticles != null) dashParticles.Stop();
 
@@ -326,7 +434,11 @@ public class PlayerController : MonoBehaviour
     void OnLand()
     {
         isJumping = false;
+<<<<<<< HEAD
         SafeTrigger(H_Land);
+=======
+        anim.SetTrigger(H_Land);
+>>>>>>> 3b69d0752b8c4aea98770e5503f477579eb912c7
         if (landParticles != null) landParticles.Play();
     }
 
@@ -369,12 +481,20 @@ public class PlayerController : MonoBehaviour
         if (shouldBeDivine == isDivineMode) return;
 
         isDivineMode = shouldBeDivine;
+<<<<<<< HEAD
+=======
+        anim.SetBool(H_IsDivine, isDivineMode);
+>>>>>>> 3b69d0752b8c4aea98770e5503f477579eb912c7
 
         if (divineAuraParticles == null) return;
         if (isDivineMode) divineAuraParticles.Play();
         else              divineAuraParticles.Stop();
     }
 
+<<<<<<< HEAD
+=======
+    // CombatController tarafından çağrılır (düşman öldürünce)
+>>>>>>> 3b69d0752b8c4aea98770e5503f477579eb912c7
     public void AddDivineFire(float amount) =>
         divineFire = Mathf.Clamp(divineFire + amount, 0f, divineFireMax);
 
@@ -382,6 +502,7 @@ public class PlayerController : MonoBehaviour
 
     void UpdateAnimator()
     {
+<<<<<<< HEAD
         if (isDashing) return;
 
         if (isGrounded)
@@ -402,6 +523,12 @@ public class PlayerController : MonoBehaviour
             else
                 anim.Play("Player_fall");
         }
+=======
+        anim.SetFloat(H_Speed,       Mathf.Abs(rb.linearVelocityX));
+        anim.SetBool (H_IsGrounded,  isGrounded);
+        anim.SetBool (H_IsFalling,   rb.linearVelocityY < -0.1f && !isGrounded);
+        anim.SetBool (H_IsWallSlide, isWallSliding);
+>>>>>>> 3b69d0752b8c4aea98770e5503f477579eb912c7
     }
 
     // ── HASAR / ÖLÜM ──────────────────────────────────────────
@@ -409,22 +536,37 @@ public class PlayerController : MonoBehaviour
     public void TakeDamage(float knockbackForce = 6f)
     {
         if (isDashing && dashInvincible) return;
+<<<<<<< HEAD
         SafeTrigger(H_Hurt);
+=======
+        anim.SetTrigger(H_Hurt);
+>>>>>>> 3b69d0752b8c4aea98770e5503f477579eb912c7
         float dir = isFacingRight ? -1f : 1f;
         rb.linearVelocity = new Vector2(knockbackForce * dir, 4f);
     }
 
     public void Die()
     {
+<<<<<<< HEAD
         SafeTrigger(H_Death);
+=======
+        anim.SetTrigger(H_Death);
+>>>>>>> 3b69d0752b8c4aea98770e5503f477579eb912c7
         rb.linearVelocity = Vector2.zero;
         rb.gravityScale   = 0f;
         col.enabled       = false;
         enabled           = false;
+<<<<<<< HEAD
+=======
+#if ENABLE_INPUT_SYSTEM
+        inputActions?.Disable();
+#endif
+>>>>>>> 3b69d0752b8c4aea98770e5503f477579eb912c7
     }
 
     // ── YARDIMCI ──────────────────────────────────────────────
 
+<<<<<<< HEAD
     void SafeTrigger(int hash)
     {
         foreach (var p in anim.parameters)
@@ -432,6 +574,8 @@ public class PlayerController : MonoBehaviour
             { anim.SetTrigger(hash); return; }
     }
 
+=======
+>>>>>>> 3b69d0752b8c4aea98770e5503f477579eb912c7
     void SetInvincible(bool state)
     {
         int enemyLayer = LayerMask.NameToLayer("Enemy");
