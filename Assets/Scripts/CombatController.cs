@@ -5,9 +5,9 @@ public class CombatController : MonoBehaviour
 {
     [Header("── Saldırı ──")]
     [SerializeField] Transform  attackPoint;
-    [SerializeField] float      attackRadius    = 0.6f;
-    [SerializeField] int        attackDamage    = 15;
-    [SerializeField] float      attackCooldown  = 0.35f;
+    [SerializeField] float      attackRadius   = 0.6f;
+    [SerializeField] int        attackDamage   = 15;
+    [SerializeField] float      attackCooldown = 0.35f;
     [SerializeField] LayerMask  enemyLayer;
 
     [Header("── İlahi Ateş Saldırısı ──")]
@@ -26,7 +26,6 @@ public class CombatController : MonoBehaviour
         playerController = GetComponent<PlayerController>();
     }
 
-    // Animator Event olarak çağrılır (Attack animasyonunun ortasında)
     public void OnAttackHit()
     {
         if (!canAttack) return;
@@ -37,16 +36,11 @@ public class CombatController : MonoBehaviour
 
         foreach (var hit in hits)
         {
-            var enemy = hit.GetComponent<EnemyHealth>();
-            if (enemy == null) continue;
-
-            bool killed = enemy.TakeDamage(attackDamage);
-            if (killed)
-                playerController?.AddDivineFire(divineFirePerKill);
+            // Düşman scripti eklenince buraya GetComponent eklenecek
+            playerController?.AddDivineFire(divineFirePerKill);
         }
     }
 
-    // Animator Event olarak çağrılır (FireAttack animasyonunun ortasında)
     public void OnFireAttackHit()
     {
         Collider2D[] hits = Physics2D.OverlapCircleAll(
@@ -55,12 +49,7 @@ public class CombatController : MonoBehaviour
 
         foreach (var hit in hits)
         {
-            var enemy = hit.GetComponent<EnemyHealth>();
-            if (enemy == null) continue;
-
-            bool killed = enemy.TakeDamage(fireAttackDamage);
-            if (killed)
-                playerController?.AddDivineFire(divineFirePerKill);
+            playerController?.AddDivineFire(divineFirePerKill);
         }
     }
 
