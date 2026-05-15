@@ -41,10 +41,11 @@ public class PlayerController : MonoBehaviour
     [SerializeField] float wallCheckDistance = 0.12f;
 
     [Header("── İlahi Ateş ──")]
-    [SerializeField] float divineFireMax      = 100f;
-    [SerializeField] float divineFireRecover  = 8f;
-    [SerializeField] float divineFireCost     = 25f;
-    [SerializeField] float divineModThreshold = 100f;
+    [SerializeField] float divineFireMax          = 100f;
+    [SerializeField] float divineFireStartPercent = 0f; // 0 = boş, 100 = dolu
+    [SerializeField] float divineFireRecover      = 8f;
+    [SerializeField] float divineFireCost         = 25f;
+    [SerializeField] float divineModThreshold     = 100f;
 
     [Header("── Görseller ──")]
     [SerializeField] ParticleSystem dashParticles;
@@ -89,6 +90,7 @@ public class PlayerController : MonoBehaviour
     public float DivineFireMax => divineFireMax;
     public bool  IsGrounded    => isGrounded;
     public bool  IsDashing     => isDashing;
+    public bool  IsFacingRight => isFacingRight;
 
     static readonly int H_Jump        = Animator.StringToHash("IsJumping");
     static readonly int H_DoubleJump  = Animator.StringToHash("DoubleJump");
@@ -105,7 +107,7 @@ public class PlayerController : MonoBehaviour
         anim = GetComponent<Animator>();
         col  = GetComponent<Collider2D>();
         sr   = GetComponent<SpriteRenderer>();
-        divineFire = divineFireMax * 0.5f;
+        divineFire = divineFireMax * (Mathf.Clamp(divineFireStartPercent, 0f, 100f) / 100f);
     }
 
     void Update()
@@ -321,8 +323,7 @@ public class PlayerController : MonoBehaviour
 
     void UpdateDivineFire()
     {
-        divineFire = Mathf.Clamp(divineFire + divineFireRecover * Time.deltaTime, 0f, divineFireMax);
-
+        // Otomatik dolma kapalı — sadece düşman öldürünce dolar
         bool shouldBeDivine = divineFire >= divineModThreshold;
         if (shouldBeDivine == isDivineMode) return;
         isDivineMode = shouldBeDivine;
