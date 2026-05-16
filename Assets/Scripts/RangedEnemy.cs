@@ -17,17 +17,19 @@ public class RangedEnemy : MonoBehaviour
     public float      projectileSpeed = 8f;
     public int        projectileDamage = 10;
 
-    int            i;
-    SpriteRenderer sr;
-    Transform      player;
-    EnemyHealth    enemyHealth;
-    float          shootTimer;
+    int                    i;
+    SpriteRenderer         sr;
+    Transform              player;
+    EnemyHealth            enemyHealth;
+    StatusEffectController statusEffect;
+    float                  shootTimer;
 
     void Start()
     {
-        sr          = GetComponent<SpriteRenderer>();
-        enemyHealth = GetComponent<EnemyHealth>();
-        shootTimer  = shootCooldown;
+        sr           = GetComponent<SpriteRenderer>();
+        enemyHealth  = GetComponent<EnemyHealth>();
+        statusEffect = GetComponent<StatusEffectController>();
+        shootTimer   = shootCooldown;
 
         var playerObj = GameObject.FindGameObjectWithTag("Player");
         if (playerObj != null)
@@ -43,6 +45,7 @@ public class RangedEnemy : MonoBehaviour
     void Update()
     {
         if (enemyHealth != null && enemyHealth.IsKnockedBack) return;
+        if (statusEffect != null && statusEffect.IsFrozen) return;
         if (player == null) return;
 
         float dist = Vector2.Distance(transform.position, player.position);

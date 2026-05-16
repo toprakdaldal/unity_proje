@@ -25,6 +25,17 @@ public class CombatController : MonoBehaviour
 
     float fireballTimer = 0f;
 
+    [Header("── Büyü Kilitleri ──")]
+    [HideInInspector] public bool poisonUnlocked = false;
+    [HideInInspector] public bool burnUnlocked   = false;
+    [HideInInspector] public bool freezeUnlocked = false;
+
+    [Header("── Büyüler ──")]
+    [SerializeField] float poisonChance    = 0.35f;
+    [SerializeField] float poisonDuration  = 3f;
+    [SerializeField] float freezeChance    = 0.45f;
+    [SerializeField] float freezeDuration  = 2f;
+
     [Header("── Yankı Darbesi ──")]
     [SerializeField] float          chargeTime    = 0.5f;
     [SerializeField] int            chargeDamage  = 25;
@@ -78,7 +89,7 @@ public class CombatController : MonoBehaviour
             if (chargeTimer >= chargeTime)
                 StartCoroutine(EchoStrikeRoutine());
             else
-                StartCoroutine(AttackRoutine());
+                StartCoroutine(AttackRoutine(applyPoison: true));
         }
 
         if (Input.GetKeyDown(KeyCode.X))
@@ -91,10 +102,10 @@ public class CombatController : MonoBehaviour
 
     // ── NORMAL SALDIRI ────────────────────────────────────────
 
-    IEnumerator AttackRoutine()
+    IEnumerator AttackRoutine(bool applyPoison = false)
     {
         canAttack = false;
-        HitEnemies(attackPoint.position, attackRadius, attackDamage);
+        HitEnemies(attackPoint.position, attackRadius, attackDamage, applyPoison);
         yield return new WaitForSeconds(attackCooldown);
         canAttack = true;
     }
@@ -129,7 +140,7 @@ public class CombatController : MonoBehaviour
 
     // ── ORTAK HASAR FONKSİYONU ────────────────────────────────
 
-    void HitEnemies(Vector2 pos, float radius, int damage)
+    void HitEnemies(Vector2 pos, float radius, int damage, bool applyPoison = false)
     {
         Collider2D[] hits = Physics2D.OverlapCircleAll(pos, radius, enemyLayer);
         foreach (var hit in hits)
@@ -139,6 +150,10 @@ public class CombatController : MonoBehaviour
             Vector2 dir = ((Vector2)hit.transform.position - (Vector2)transform.position).normalized;
             enemy.OnDied += () => playerController?.AddDivineFire(divineFirePerKill);
             enemy.TakeDamage(damage, dir);
+
+            // Zehir (sadece normal melee, kilit açıksa)
+            if (applyPoison && poisonUnlocked && Random.value <= poisonChance)
+                hit.GetComponent<StatusEffectController>()?.ApplyPoison(poisonDuration);
         }
     }
 
@@ -168,6 +183,10 @@ public class CombatController : MonoBehaviour
             Vector2 dir = (hit.transform.position - transform.position).normalized;
             enemy.OnDied += () => playerController?.AddDivineFire(divineFirePerKill);
             enemy.TakeDamage(fireAttackDamage, dir);
+
+            // Dondurma (kilit açıksa)
+            if (freezeUnlocked && Random.value <= freezeChance)
+                hit.GetComponent<StatusEffectController>()?.ApplyFreeze(freezeDuration);
         }
 
         yield return null;
@@ -189,7 +208,8 @@ public class CombatController : MonoBehaviour
         var fireball = fb.GetComponent<Fireball>();
         if (fireball != null)
         {
-            fireball.damage = fireballDamage;
+            fireball.damage       = fireballDamage;
+            fireball.burnUnlocked = burnUnlocked;
             fireball.Init(dir);
         }
     }

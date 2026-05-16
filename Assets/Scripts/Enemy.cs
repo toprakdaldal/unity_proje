@@ -24,13 +24,15 @@ public class Enemy : MonoBehaviour
     private float            attackTimer;
     private Transform        decoyTarget;
     private float            decoyTimer;
-    private bool             isStunned;
-    private float            stunTimer;
+    private bool                   isStunned;
+    private float                  stunTimer;
+    private StatusEffectController statusEffect;
 
     void Start()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
         enemyHealth    = GetComponent<EnemyHealth>();
+        statusEffect   = GetComponent<StatusEffectController>();
 
         var playerObj = GameObject.FindGameObjectWithTag("Player");
         if (playerObj != null)
@@ -54,8 +56,9 @@ public class Enemy : MonoBehaviour
 
     void Update()
     {
-        // Knockback yenirken hareket etme
+        // Knockback veya dondurma — hareket etme
         if (enemyHealth != null && enemyHealth.IsKnockedBack) return;
+        if (statusEffect != null && statusEffect.IsFrozen) return;
 
         // Stun kontrolü
         if (isStunned)
