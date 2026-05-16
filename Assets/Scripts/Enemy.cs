@@ -12,8 +12,9 @@ public class Enemy : MonoBehaviour
     public float attackRange    = 0.8f;
 
     [Header("── Saldırı ──")]
-    public int   attackDamage   = 10;
-    public float attackCooldown = 1.2f;
+    public int   attackDamage        = 10;
+    public float attackCooldown      = 1.2f;
+    public float playerKnockbackForce = 3f;
 
     private int              i;
     private SpriteRenderer   spriteRenderer;
@@ -21,6 +22,10 @@ public class Enemy : MonoBehaviour
     private HealthController playerHealth;
     private EnemyHealth      enemyHealth;
     private float            attackTimer;
+    private Transform        decoyTarget;
+    private float            decoyTimer;
+    private bool             isStunned;
+    private float            stunTimer;
 
     void Start()
     {
@@ -35,15 +40,45 @@ public class Enemy : MonoBehaviour
         }
     }
 
+    public void SetDecoy(Transform decoy, float duration)
+    {
+        decoyTarget = decoy;
+        decoyTimer  = duration;
+    }
+
+    public void Stun(float duration)
+    {
+        isStunned = true;
+        stunTimer = duration;
+    }
+
     void Update()
     {
         // Knockback yenirken hareket etme
         if (enemyHealth != null && enemyHealth.IsKnockedBack) return;
 
+        // Stun kontrolü
+        if (isStunned)
+        {
+            stunTimer -= Time.deltaTime;
+            if (stunTimer <= 0f) isStunned = false;
+            return;
+        }
+
+        // Decoy süresi güncelle
+        if (decoyTimer > 0f)
+        {
+            decoyTimer -= Time.deltaTime;
+            if (decoyTimer <= 0f) decoyTarget = null;
+        }
+
+        // Decoy varsa onu takip et
+        Transform target = (decoyTarget != null) ? decoyTarget : player;
+
         attackTimer -= Time.deltaTime;
 
-        float distToPlayer = player != null
-            ? Vector2.Distance(transform.position, player.position)
+        float distToPlayer = target != null
+            ? Vector2.Distance(transform.position, target.position)
             : Mathf.Infinity;
 
         // Saldırı menzilinde
@@ -52,15 +87,21 @@ public class Enemy : MonoBehaviour
             if (attackTimer <= 0f)
             {
                 attackTimer = attackCooldown;
-                playerHealth?.TakeDamage(attackDamage);
+                // Decoy'u hedefliyorsa oyuncuya hasar verme
+                if (decoyTarget == null)
+                {
+                    // Düşmanın konumuna göre knockback yönü hesapla
+                    float dir = transform.position.x < player.position.x ? 1f : -1f;
+                    playerHealth?.TakeDamage(attackDamage, playerKnockbackForce, dir);
+                }
             }
             return;
         }
 
-        // Algılama menzilinde — oyuncuyu takip et
-        if (distToPlayer <= detectionRange)
+        // Algılama menzilinde — hedefi takip et (decoy varsa onu)
+        if (distToPlayer <= detectionRange || decoyTarget != null)
         {
-            Chase();
+            ChaseTarget(target);
             return;
         }
 
@@ -84,12 +125,14 @@ public class Enemy : MonoBehaviour
         spriteRenderer.flipX = (transform.position.x - points[i].position.x) < 0f;
     }
 
-    void Chase()
-    {
-        transform.position = Vector2.MoveTowards(
-            transform.position, player.position, chaseSpeed * Time.deltaTime);
+    void Chase() => ChaseTarget(player);
 
-        spriteRenderer.flipX = (transform.position.x - player.position.x) < 0f;
+    void ChaseTarget(Transform target)
+    {
+        if (target == null) return;
+        transform.position = Vector2.MoveTowards(
+            transform.position, target.position, chaseSpeed * Time.deltaTime);
+        spriteRenderer.flipX = (transform.position.x - target.position.x) < 0f;
     }
 
     void OnDrawGizmosSelected()

@@ -16,6 +16,7 @@ public class HealthController : MonoBehaviour
     bool  isInvincible;
 
     PlayerController playerController;
+    GhostStep        ghostStep;
 
     public int   CurrentHealth => currentHealth;
     public int   MaxHealth     => maxHealth;
@@ -24,12 +25,14 @@ public class HealthController : MonoBehaviour
     void Awake()
     {
         playerController = GetComponent<PlayerController>();
+        ghostStep        = GetComponent<GhostStep>();
         currentHealth    = maxHealth;
     }
 
-    public void TakeDamage(int amount, float knockbackForce = 6f)
+    public void TakeDamage(int amount, float knockbackForce = 3f, float knockbackDirX = 0f)
     {
         if (isInvincible || currentHealth <= 0) return;
+        if (ghostStep != null && ghostStep.IsGhosting) return; // ghost modda hasar alma
 
         currentHealth = Mathf.Max(0, currentHealth - amount);
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
@@ -40,7 +43,7 @@ public class HealthController : MonoBehaviour
             return;
         }
 
-        playerController?.TakeDamage(knockbackForce);
+        playerController?.TakeDamage(knockbackForce, knockbackDirX);
         StartCoroutine(IFrameRoutine());
     }
 

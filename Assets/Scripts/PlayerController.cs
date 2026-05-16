@@ -353,12 +353,12 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    public void TakeDamage(float knockbackForce = 6f)
+    public void TakeDamage(float knockbackForce = 3f, float knockbackDirX = 0f)
     {
         if (isDashing && dashInvincible) return;
         SafeTrigger(H_Hurt);
-        float dir = isFacingRight ? -1f : 1f;
-        rb.linearVelocity = new Vector2(knockbackForce * dir, 4f);
+        float dir = knockbackDirX != 0f ? Mathf.Sign(knockbackDirX) : (isFacingRight ? -1f : 1f);
+        rb.linearVelocity = new Vector2(knockbackForce * dir, 2f);
     }
 
     public void Die()

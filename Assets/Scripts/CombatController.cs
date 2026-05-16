@@ -25,23 +25,61 @@ public class CombatController : MonoBehaviour
 
     float fireballTimer = 0f;
 
+    [Header("── Yankı Darbesi ──")]
+    [SerializeField] float          chargeTime    = 0.5f;
+    [SerializeField] int            chargeDamage  = 25;
+    [SerializeField] float          echoDelay     = 0.3f;
+    [SerializeField] int            echoDamage    = 12;
+    [SerializeField] float          echoRadius    = 0.9f;
+    [SerializeField] ParticleSystem echoParticles;  // yankı çarpma efekti
+
     [Header("── İlahi Ateş Dolumu ──")]
-    [SerializeField] float divineFirePerKill = 12.5f; // 2 kill = çeyrek bar
+    [SerializeField] float divineFirePerKill = 12.5f;
 
     PlayerController playerController;
+    Stomp            stomp;
     SpriteRenderer   sr;
-    bool             canAttack = true;
+    bool             canAttack  = true;
+    bool             isCharging;
+    float            chargeTimer;
 
     void Awake()
     {
         playerController = GetComponent<PlayerController>();
+        stomp            = GetComponent<Stomp>();
         sr               = GetComponent<SpriteRenderer>();
     }
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Z) && canAttack)
-            StartCoroutine(AttackRoutine());
+        bool stompActive = stomp != null && stomp.IsStomping;
+
+        // Z tuşu basıldığında şarjı başlat
+        if (Input.GetKeyDown(KeyCode.Z) && canAttack && !stompActive)
+        {
+            isCharging  = true;
+            chargeTimer = 0f;
+        }
+
+        // Şarj devam ediyor — sprite sarıya kayar
+        if (isCharging)
+        {
+            chargeTimer += Time.deltaTime;
+            if (sr != null)
+                sr.color = Color.Lerp(Color.white, Color.yellow, chargeTimer / chargeTime);
+        }
+
+        // Z bırakıldığında: yeterince tutulduysa Yankı Darbesi, değilse normal saldırı
+        if (Input.GetKeyUp(KeyCode.Z) && isCharging)
+        {
+            isCharging   = false;
+            if (sr != null) sr.color = Color.white;
+
+            if (chargeTimer >= chargeTime)
+                StartCoroutine(EchoStrikeRoutine());
+            else
+                StartCoroutine(AttackRoutine());
+        }
 
         if (Input.GetKeyDown(KeyCode.X))
             StartCoroutine(FireAttackRoutine());
@@ -56,21 +94,52 @@ public class CombatController : MonoBehaviour
     IEnumerator AttackRoutine()
     {
         canAttack = false;
+        HitEnemies(attackPoint.position, attackRadius, attackDamage);
+        yield return new WaitForSeconds(attackCooldown);
+        canAttack = true;
+    }
 
-        Collider2D[] hits = Physics2D.OverlapCircleAll(
-            attackPoint.position, attackRadius, enemyLayer);
+    // ── YANKI DARBESİ ─────────────────────────────────────────
 
+    IEnumerator EchoStrikeRoutine()
+    {
+        canAttack = false;
+
+        // Güçlü ilk vuruş — sarı flaş
+        Vector2 hitPos = attackPoint.position;
+        StartCoroutine(FlashColor(new Color(1f, 0.9f, 0f)));
+        HitEnemies(hitPos, attackRadius, chargeDamage);
+
+        // Yankı gecikmesi
+        yield return new WaitForSeconds(echoDelay);
+
+        // İkinci yankı vuruşu — cyan flaş + kıvılcım efekti
+        StartCoroutine(FlashColor(new Color(0.4f, 0.9f, 1f)));
+        if (echoParticles != null)
+        {
+            echoParticles.transform.position = hitPos;
+            echoParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            echoParticles.Play();
+        }
+        HitEnemies(hitPos, echoRadius, echoDamage);
+
+        yield return new WaitForSeconds(attackCooldown);
+        canAttack = true;
+    }
+
+    // ── ORTAK HASAR FONKSİYONU ────────────────────────────────
+
+    void HitEnemies(Vector2 pos, float radius, int damage)
+    {
+        Collider2D[] hits = Physics2D.OverlapCircleAll(pos, radius, enemyLayer);
         foreach (var hit in hits)
         {
             var enemy = hit.GetComponent<EnemyHealth>();
             if (enemy == null) continue;
-            Vector2 dir = (hit.transform.position - transform.position).normalized;
+            Vector2 dir = ((Vector2)hit.transform.position - (Vector2)transform.position).normalized;
             enemy.OnDied += () => playerController?.AddDivineFire(divineFirePerKill);
-            enemy.TakeDamage(attackDamage, dir);
+            enemy.TakeDamage(damage, dir);
         }
-
-        yield return new WaitForSeconds(attackCooldown);
-        canAttack = true;
     }
 
     // ── İLAHİ ATEŞ SALDIRISI ─────────────────────────────────

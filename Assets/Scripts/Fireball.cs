@@ -21,7 +21,6 @@ public class Fireball : MonoBehaviour
 
     void OnTriggerEnter2D(Collider2D other)
     {
-        // Düşmana çarptı
         var enemy = other.GetComponent<EnemyHealth>();
         if (enemy != null)
         {
@@ -30,7 +29,6 @@ public class Fireball : MonoBehaviour
             return;
         }
 
-        // Zemine çarptı
         if (other.CompareTag("Ground"))
         {
             Destroy(gameObject);

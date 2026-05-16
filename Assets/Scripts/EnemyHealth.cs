@@ -7,8 +7,12 @@ public class EnemyHealth : MonoBehaviour
     public int maxHealth = 60;
 
     [Header("── Knockback ──")]
-    public float knockbackForce = 5f;
+    public float knockbackForce    = 5f;
     public float knockbackDuration = 0.15f;
+
+    [Header("── Drop ──")]
+    [SerializeField] GameObject ghostStepPickupPrefab;
+    [SerializeField] float      dropChance = 0.4f; // %40 ihtimal
 
     private int            currentHealth;
     private SpriteRenderer sr;
@@ -44,6 +48,10 @@ public class EnemyHealth : MonoBehaviour
 
     void Die()
     {
+        // Hayalet taşı düşür
+        if (ghostStepPickupPrefab != null && Random.value <= dropChance)
+            Instantiate(ghostStepPickupPrefab, transform.position, Quaternion.identity);
+
         OnDied?.Invoke();
         Destroy(gameObject);
     }
