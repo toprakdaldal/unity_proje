@@ -91,16 +91,19 @@ public class Stomp : MonoBehaviour
         Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, stompRadius);
         foreach (var hit in hits)
         {
+            Vector2 dir = (hit.transform.position - transform.position).normalized;
+
             var enemyHealth = hit.GetComponent<EnemyHealth>();
             if (enemyHealth != null)
-            {
-                Vector2 dir = (hit.transform.position - transform.position).normalized;
                 enemyHealth.TakeDamage(stompDamage, dir);
-            }
 
             var enemy = hit.GetComponent<Enemy>();
             if (enemy != null)
                 enemy.Stun(stunDuration);
+
+            var crate = hit.GetComponent<BreakableCrate>();
+            if (crate != null)
+                crate.TakeDamage(stompDamage);
         }
     }
 

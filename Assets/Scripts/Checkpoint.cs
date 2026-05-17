@@ -35,7 +35,7 @@ public class Checkpoint : MonoBehaviour
         // Checkpoint kaydet
         CheckpointManager.Instance?.SetCheckpoint(transform.position);
 
-        // Oyuncuyu iyileştir
+        // Oyuncuyu iyileştir + iksirleri doldur
         var playerObj = GameObject.FindGameObjectWithTag("Player");
         playerObj?.GetComponent<HealthController>()?.Heal(9999);
 

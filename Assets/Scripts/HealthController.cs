@@ -37,6 +37,8 @@ public class HealthController : MonoBehaviour
         currentHealth = Mathf.Max(0, currentHealth - amount);
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
 
+        CameraController.Instance?.Shake(0.15f, 0.2f);
+
         if (currentHealth <= 0)
         {
             Die();

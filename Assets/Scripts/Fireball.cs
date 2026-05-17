@@ -28,16 +28,30 @@ public class Fireball : MonoBehaviour
         if (enemy != null)
         {
             enemy.TakeDamage(damage, direction);
-
-            // Yakma (kilit açıksa)
             if (burnUnlocked && Random.value <= burnChance)
                 other.GetComponent<StatusEffectController>()?.ApplyBurn(burnDuration);
-
             Destroy(gameObject);
             return;
         }
 
-        if (other.CompareTag("Ground"))
+        var boss = other.GetComponent<BossController>();
+        if (boss != null)
+        {
+            boss.TakeDamage(damage, direction);
+            Destroy(gameObject);
+            return;
+        }
+
+        var crate = other.GetComponent<BreakableCrate>();
+        if (crate != null)
+        {
+            crate.TakeDamage(damage);
+            Destroy(gameObject);
+            return;
+        }
+
+        // Zemin ve duvar — katman kontrolüyle yok ol
+        if (other.gameObject.layer == LayerMask.NameToLayer("Ground"))
             Destroy(gameObject);
     }
 }

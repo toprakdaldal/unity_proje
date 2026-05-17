@@ -12,7 +12,7 @@ public class EnemyHealth : MonoBehaviour
 
     [Header("── Drop ──")]
     [SerializeField] GameObject ghostStepPickupPrefab;
-    [SerializeField] float      dropChance = 0.4f; // %40 ihtimal
+    [SerializeField] float      ghostStepDropChance = 0.4f;
 
     private int            currentHealth;
     private SpriteRenderer sr;
@@ -49,7 +49,7 @@ public class EnemyHealth : MonoBehaviour
     void Die()
     {
         // Hayalet taşı düşür
-        if (ghostStepPickupPrefab != null && Random.value <= dropChance)
+        if (ghostStepPickupPrefab != null && Random.value <= ghostStepDropChance)
             Instantiate(ghostStepPickupPrefab, transform.position, Quaternion.identity);
 
         OnDied?.Invoke();

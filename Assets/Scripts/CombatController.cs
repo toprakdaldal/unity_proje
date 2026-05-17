@@ -9,6 +9,7 @@ public class CombatController : MonoBehaviour
     [SerializeField] int       attackDamage   = 15;
     [SerializeField] float     attackCooldown = 0.35f;
     [SerializeField] LayerMask enemyLayer;
+    [SerializeField] LayerMask breakableLayer;
 
     [Header("── İlahi Ateş Saldırısı ──")]
     [SerializeField] Transform fireAttackPoint;
@@ -143,17 +144,48 @@ public class CombatController : MonoBehaviour
     void HitEnemies(Vector2 pos, float radius, int damage, bool applyPoison = false)
     {
         Collider2D[] hits = Physics2D.OverlapCircleAll(pos, radius, enemyLayer);
+        bool hitAny = false;
+
         foreach (var hit in hits)
         {
-            var enemy = hit.GetComponent<EnemyHealth>();
-            if (enemy == null) continue;
             Vector2 dir = ((Vector2)hit.transform.position - (Vector2)transform.position).normalized;
-            enemy.OnDied += () => playerController?.AddDivineFire(divineFirePerKill);
-            enemy.TakeDamage(damage, dir);
 
-            // Zehir (sadece normal melee, kilit açıksa)
-            if (applyPoison && poisonUnlocked && Random.value <= poisonChance)
-                hit.GetComponent<StatusEffectController>()?.ApplyPoison(poisonDuration);
+            // Normal düşman
+            var enemy = hit.GetComponent<EnemyHealth>();
+            if (enemy != null)
+            {
+                hitAny = true;
+                enemy.OnDied += () => playerController?.AddDivineFire(divineFirePerKill);
+                enemy.TakeDamage(damage, dir);
+
+                if (applyPoison && poisonUnlocked && Random.value <= poisonChance)
+                    hit.GetComponent<StatusEffectController>()?.ApplyPoison(poisonDuration);
+                continue;
+            }
+
+            // Boss
+            var boss = hit.GetComponent<BossController>();
+            if (boss != null)
+            {
+                hitAny = true;
+                boss.TakeDamage(damage, dir);
+            }
+        }
+
+        // Kırılabilir kasalar
+        Collider2D[] crateHits = Physics2D.OverlapCircleAll(pos, radius, breakableLayer);
+        foreach (var hit in crateHits)
+        {
+            var crate = hit.GetComponent<BreakableCrate>();
+            if (crate == null) continue;
+            crate.TakeDamage(damage);
+            hitAny = true;
+        }
+
+        if (hitAny)
+        {
+            HitStop.Instance?.Stop(0.06f);
+            CameraController.Instance?.Shake(0.1f, 0.1f);
         }
     }
 
@@ -178,16 +210,26 @@ public class CombatController : MonoBehaviour
 
         foreach (var hit in hits)
         {
-            var enemy = hit.GetComponent<EnemyHealth>();
-            if (enemy == null) continue;
             Vector2 dir = (hit.transform.position - transform.position).normalized;
-            enemy.OnDied += () => playerController?.AddDivineFire(divineFirePerKill);
-            enemy.TakeDamage(fireAttackDamage, dir);
 
-            // Dondurma (kilit açıksa)
-            if (freezeUnlocked && Random.value <= freezeChance)
-                hit.GetComponent<StatusEffectController>()?.ApplyFreeze(freezeDuration);
+            var enemy = hit.GetComponent<EnemyHealth>();
+            if (enemy != null)
+            {
+                enemy.OnDied += () => playerController?.AddDivineFire(divineFirePerKill);
+                enemy.TakeDamage(fireAttackDamage, dir);
+                if (freezeUnlocked && Random.value <= freezeChance)
+                    hit.GetComponent<StatusEffectController>()?.ApplyFreeze(freezeDuration);
+                continue;
+            }
+
+            hit.GetComponent<BossController>()?.TakeDamage(fireAttackDamage, dir);
         }
+
+        // Kırılabilir kasalar
+        Collider2D[] crateHitsX = Physics2D.OverlapCircleAll(
+            point.position, fireAttackRadius, breakableLayer);
+        foreach (var hit in crateHitsX)
+            hit.GetComponent<BreakableCrate>()?.TakeDamage(fireAttackDamage);
 
         yield return null;
     }

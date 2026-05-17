@@ -33,7 +33,8 @@ public class EnemyProjectile : MonoBehaviour
 
         if (hit.collider != null
             && hit.collider.GetComponent<EnemyHealth>()     == null
-            && hit.collider.GetComponent<EnemyProjectile>() == null)
+            && hit.collider.GetComponent<EnemyProjectile>() == null
+            && hit.collider.GetComponent<BossController>()  == null)
         {
             if (canHit && hit.collider.CompareTag("Player"))
                 hit.collider.GetComponent<HealthController>()?.TakeDamage(damage);
