@@ -14,6 +14,9 @@ public class EnemyHealth : MonoBehaviour
     [SerializeField] GameObject ghostStepPickupPrefab;
     [SerializeField] float      ghostStepDropChance = 0.4f;
 
+    [Header("── Ruh Ödülü ──")]
+    [SerializeField] int soulReward = 8;
+
     private int            currentHealth;
     private SpriteRenderer sr;
     private Rigidbody2D    rb;
@@ -51,6 +54,9 @@ public class EnemyHealth : MonoBehaviour
         // Hayalet taşı düşür
         if (ghostStepPickupPrefab != null && Random.value <= ghostStepDropChance)
             Instantiate(ghostStepPickupPrefab, transform.position, Quaternion.identity);
+
+        // Ruh ödülü
+        SoulCurrency.Instance?.AddSouls(soulReward);
 
         OnDied?.Invoke();
         Destroy(gameObject);

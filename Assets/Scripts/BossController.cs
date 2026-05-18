@@ -26,9 +26,11 @@ public class BossController : MonoBehaviour
 
     // ── Zemin Çarpmışı ────────────────────────────────────────────
     [Header("── Zemin Çarpmışı ──")]
-    [SerializeField] float          slamCooldown = 4.5f;
-    [SerializeField] float          slamRadius   = 3.5f;
-    [SerializeField] int            slamDamage   = 25;
+    [SerializeField] float          slamCooldown   = 4.5f;
+    [SerializeField] int            slamDamage     = 25;
+    [SerializeField] float          shockwaveSpeed = 6f;
+    [SerializeField] float          shockwaveRange = 8f;
+    [SerializeField] GameObject     shockwavePrefab;
     [SerializeField] ParticleSystem slamParticles;
 
     // ── Dash ─────────────────────────────────────────────────────
@@ -137,7 +139,7 @@ public class BossController : MonoBehaviour
             shootTimer = shootCooldown * coolMult;
             StartCoroutine(ShootRoutine());
         }
-        else if (slamTimer <= 0f && dist <= slamRadius + 0.5f)
+        else if (slamTimer <= 0f && dist <= shockwaveRange * 0.6f)
         {
             slamTimer = slamCooldown * coolMult;
             StartCoroutine(SlamRoutine());
@@ -263,25 +265,37 @@ public class BossController : MonoBehaviour
         anim?.SetTrigger("Cast");
         yield return new WaitForSeconds(0.2f); // cast animasyonunun başı oynasın
 
+        // Patlama partikülü
         if (slamParticles != null)
         {
             slamParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             slamParticles.Play();
         }
 
-        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, slamRadius);
-        foreach (var hit in hits)
-        {
-            if (!hit.CompareTag("Player")) continue;
-            float dir = transform.position.x < player.position.x ? 1f : -1f;
-            hit.GetComponent<HealthController>()?.TakeDamage(slamDamage, 6f, dir);
-        }
+        // Her iki yöne şok dalgası fırlat
+        SpawnShockwave(1f);
+        SpawnShockwave(-1f);
 
         CameraController.Instance?.Shake(0.3f, 0.35f);
         HitStop.Instance?.Stop(0.08f);
 
         yield return new WaitForSeconds(0.4f);
         isAttacking = false;
+    }
+
+    // ── Şok Dalgası ──────────────────────────────────────────────
+    void SpawnShockwave(float dir)
+    {
+        if (shockwavePrefab == null) return;
+        GameObject sw = Instantiate(shockwavePrefab, transform.position, Quaternion.identity);
+        var wave = sw.GetComponent<SlamShockwave>();
+        if (wave != null)
+        {
+            wave.damage    = slamDamage;
+            wave.speed     = shockwaveSpeed;
+            wave.maxRange  = shockwaveRange;
+            wave.direction = dir;
+        }
     }
 
     // ── Dash Saldırısı ───────────────────────────────────────────
@@ -416,7 +430,7 @@ public class BossController : MonoBehaviour
     void OnDrawGizmosSelected()
     {
         Gizmos.color = new Color(1f, 0f, 0f, 0.25f);
-        Gizmos.DrawWireSphere(transform.position, slamRadius);
+        Gizmos.DrawWireSphere(transform.position, shockwaveRange * 0.6f);
         Gizmos.color = new Color(1f, 0.5f, 0f, 0.2f);
         Gizmos.DrawWireSphere(transform.position, detectionRange);
         Gizmos.color = new Color(0f, 0.5f, 1f, 0.3f);

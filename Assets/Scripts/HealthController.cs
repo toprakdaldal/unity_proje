@@ -34,6 +34,13 @@ public class HealthController : MonoBehaviour
         if (isInvincible || currentHealth <= 0) return;
         if (ghostStep != null && ghostStep.IsGhosting) return; // ghost modda hasar alma
 
+        // Yüzükten hasar azaltma
+        if (RingController.Instance != null)
+        {
+            float reduction = RingController.Instance.GetBonus(RingEffect.DamageReduction);
+            amount = Mathf.Max(1, Mathf.RoundToInt(amount * (1f - reduction)));
+        }
+
         currentHealth = Mathf.Max(0, currentHealth - amount);
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
 

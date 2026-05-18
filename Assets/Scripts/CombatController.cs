@@ -103,10 +103,20 @@ public class CombatController : MonoBehaviour
 
     // ── NORMAL SALDIRI ────────────────────────────────────────
 
+    int FinalMeleeDamage(int baseDmg)
+    {
+        int dmg = baseDmg;
+        if (SkillTree.Instance != null)
+            dmg += SkillTree.Instance.ExtraDamage;
+        if (RingController.Instance != null)
+            dmg += Mathf.RoundToInt(RingController.Instance.GetBonus(RingEffect.BonusDamage));
+        return dmg;
+    }
+
     IEnumerator AttackRoutine(bool applyPoison = false)
     {
         canAttack = false;
-        HitEnemies(attackPoint.position, attackRadius, attackDamage, applyPoison);
+        HitEnemies(attackPoint.position, attackRadius, FinalMeleeDamage(attackDamage), applyPoison);
         yield return new WaitForSeconds(attackCooldown);
         canAttack = true;
     }
@@ -120,7 +130,7 @@ public class CombatController : MonoBehaviour
         // Güçlü ilk vuruş — sarı flaş
         Vector2 hitPos = attackPoint.position;
         StartCoroutine(FlashColor(new Color(1f, 0.9f, 0f)));
-        HitEnemies(hitPos, attackRadius, chargeDamage);
+        HitEnemies(hitPos, attackRadius, FinalMeleeDamage(chargeDamage));
 
         // Yankı gecikmesi
         yield return new WaitForSeconds(echoDelay);
@@ -133,7 +143,7 @@ public class CombatController : MonoBehaviour
             echoParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             echoParticles.Play();
         }
-        HitEnemies(hitPos, echoRadius, echoDamage);
+        HitEnemies(hitPos, echoRadius, FinalMeleeDamage(echoDamage));
 
         yield return new WaitForSeconds(attackCooldown);
         canAttack = true;

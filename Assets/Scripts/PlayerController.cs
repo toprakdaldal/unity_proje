@@ -175,7 +175,10 @@ public class PlayerController : MonoBehaviour
     {
         if (isWallJumping) return;
 
-        float target = moveInput * moveSpeed;
+        float effectiveSpeed = moveSpeed;
+        if (SkillTree.Instance      != null) effectiveSpeed += SkillTree.Instance.ExtraMoveSpeed;
+        if (RingController.Instance != null) effectiveSpeed += RingController.Instance.GetBonus(RingEffect.FasterRunning);
+        float target = moveInput * effectiveSpeed;
         float accel  = isGrounded
             ? (Mathf.Abs(target) > 0.01f ? acceleration    : deceleration)
             : (Mathf.Abs(target) > 0.01f ? airAcceleration : airDeceleration);
