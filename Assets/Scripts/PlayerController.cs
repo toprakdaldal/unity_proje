@@ -178,6 +178,7 @@ public class PlayerController : MonoBehaviour
         float effectiveSpeed = moveSpeed;
         if (SkillTree.Instance      != null) effectiveSpeed += SkillTree.Instance.ExtraMoveSpeed;
         if (RingController.Instance != null) effectiveSpeed += RingController.Instance.GetBonus(RingEffect.FasterRunning);
+        if (CardSystem.Instance     != null) effectiveSpeed += CardSystem.Instance.GetBonus(CardEffect.MoveSpeedBonus);
         float target = moveInput * effectiveSpeed;
         float accel  = isGrounded
             ? (Mathf.Abs(target) > 0.01f ? acceleration    : deceleration)

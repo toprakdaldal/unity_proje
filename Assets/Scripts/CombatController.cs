@@ -110,6 +110,12 @@ public class CombatController : MonoBehaviour
             dmg += SkillTree.Instance.ExtraDamage;
         if (RingController.Instance != null)
             dmg += Mathf.RoundToInt(RingController.Instance.GetBonus(RingEffect.BonusDamage));
+        // Kart bonusu: çarpan olarak uygulanır
+        if (CardSystem.Instance != null)
+        {
+            float mult = 1f + CardSystem.Instance.GetBonus(CardEffect.DamageBonus);
+            dmg = Mathf.RoundToInt(dmg * mult);
+        }
         return dmg;
     }
 
@@ -170,6 +176,14 @@ public class CombatController : MonoBehaviour
 
                 if (applyPoison && poisonUnlocked && Random.value <= poisonChance)
                     hit.GetComponent<StatusEffectController>()?.ApplyPoison(poisonDuration);
+
+                // Kart bonusu: melee burn şansı
+                if (CardSystem.Instance != null)
+                {
+                    float burnBonus = CardSystem.Instance.GetBonus(CardEffect.BurnChanceBonus);
+                    if (burnBonus > 0f && Random.value <= burnBonus)
+                        hit.GetComponent<StatusEffectController>()?.ApplyBurn(2.5f);
+                }
                 continue;
             }
 

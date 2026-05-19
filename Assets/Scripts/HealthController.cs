@@ -41,6 +41,13 @@ public class HealthController : MonoBehaviour
             amount = Mathf.Max(1, Mathf.RoundToInt(amount * (1f - reduction)));
         }
 
+        // Karttan hasar azaltma
+        if (CardSystem.Instance != null)
+        {
+            float reduction = CardSystem.Instance.GetBonus(CardEffect.DamageReduction);
+            amount = Mathf.Max(1, Mathf.RoundToInt(amount * (1f - reduction)));
+        }
+
         currentHealth = Mathf.Max(0, currentHealth - amount);
         OnHealthChanged?.Invoke(currentHealth, maxHealth);
 
@@ -67,7 +74,8 @@ public class HealthController : MonoBehaviour
     {
         playerController?.Die();
         OnDeath?.Invoke();
-        StartCoroutine(ReloadSceneDelayed(1.5f));
+        DeathScreen.Instance?.Show();
+        StartCoroutine(ReloadSceneDelayed(3.5f));
     }
 
     IEnumerator IFrameRoutine()
@@ -79,7 +87,8 @@ public class HealthController : MonoBehaviour
 
     IEnumerator ReloadSceneDelayed(float delay)
     {
-        yield return new WaitForSeconds(delay);
+        yield return new WaitForSecondsRealtime(delay);
+        Time.timeScale = 1f;
         UnityEngine.SceneManagement.SceneManager.LoadScene(
             UnityEngine.SceneManagement.SceneManager.GetActiveScene().name);
     }

@@ -55,8 +55,25 @@ public class EnemyHealth : MonoBehaviour
         if (ghostStepPickupPrefab != null && Random.value <= ghostStepDropChance)
             Instantiate(ghostStepPickupPrefab, transform.position, Quaternion.identity);
 
-        // Ruh ödülü
-        SoulCurrency.Instance?.AddSouls(soulReward);
+        // Ruh ödülü (kart bonusu uygulanır)
+        int finalSouls = soulReward;
+        if (CardSystem.Instance != null)
+        {
+            float mult = 1f + CardSystem.Instance.GetBonus(CardEffect.SoulMultiplier);
+            finalSouls = Mathf.RoundToInt(finalSouls * mult);
+        }
+        SoulCurrency.Instance?.AddSouls(finalSouls);
+
+        // Kart: öldürmede iyileş
+        if (CardSystem.Instance != null)
+        {
+            int healAmt = Mathf.RoundToInt(CardSystem.Instance.GetBonus(CardEffect.HealOnKill));
+            if (healAmt > 0)
+            {
+                var player = GameObject.FindGameObjectWithTag("Player");
+                player?.GetComponent<HealthController>()?.Heal(healAmt);
+            }
+        }
 
         OnDied?.Invoke();
         Destroy(gameObject);

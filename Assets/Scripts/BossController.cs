@@ -406,6 +406,7 @@ public class BossController : MonoBehaviour
     IEnumerator DieDelayed()
     {
         yield return new WaitForSeconds(1.5f); // ölüm animasyonu oynasın
+        VictoryScreen.Instance?.Show();
         Destroy(gameObject);
     }
 

@@ -47,6 +47,9 @@ public class Checkpoint : MonoBehaviour
         // Diğer checkpoint'leri söndür
         foreach (var cp in FindObjectsByType<Checkpoint>(FindObjectsSortMode.None))
             if (cp != this) cp.Deactivate();
+
+        // Kader Kartı seçim ekranını aç
+        CardChoiceUI.Instance?.Show();
     }
 
     public void Deactivate()
