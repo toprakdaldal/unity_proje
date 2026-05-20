@@ -87,7 +87,14 @@ public class PlayerController : MonoBehaviour
     bool fireAttackPressed;
 
     public float DivineFire    => divineFire;
-    public float DivineFireMax => divineFireMax;
+    public float DivineFireMax
+    {
+        get
+        {
+            float bonus = SkillTree.Instance != null ? SkillTree.Instance.ExtraDivineMax : 0f;
+            return divineFireMax + bonus;
+        }
+    }
     public bool  IsGrounded    => isGrounded;
     public bool  IsDashing     => isDashing;
     public bool  IsFacingRight => isFacingRight;
@@ -117,6 +124,7 @@ public class PlayerController : MonoBehaviour
         CheckWalls();
         UpdateTimers();
         UpdateDivineFire();
+        Update_DivineFireRegen();
         ProcessActions();
         UpdateAnimator();
         ClearFrameInput();
@@ -222,11 +230,14 @@ public class PlayerController : MonoBehaviour
 
     void TryJump()
     {
+        float jumpMult = SkillTree.Instance != null ? SkillTree.Instance.JumpForceMult : 1f;
+        bool hasDoubleJumpSkill = SkillTree.Instance == null || SkillTree.Instance.HasDoubleJump;
+
         if (isWallSliding)                  { DoWallJump(); return; }
-        if (isGrounded || coyoteTimer > 0f) { DoJump(jumpForce); canDoubleJump = true; return; }
-        if (canDoubleJump)
+        if (isGrounded || coyoteTimer > 0f) { DoJump(jumpForce * jumpMult); canDoubleJump = hasDoubleJumpSkill; return; }
+        if (canDoubleJump && hasDoubleJumpSkill)
         {
-            DoJump(doubleJumpForce);
+            DoJump(doubleJumpForce * jumpMult);
             canDoubleJump = false;
             SafeTrigger(H_DoubleJump);
             if (doubleJumpParticles != null) doubleJumpParticles.Play();
@@ -275,7 +286,9 @@ public class PlayerController : MonoBehaviour
         if (dashInvincible)        SetInvincible(false);
         if (dashParticles != null) dashParticles.Stop();
 
-        yield return new WaitForSeconds(dashCooldown);
+        float effectiveCD = dashCooldown;
+        if (SkillTree.Instance != null) effectiveCD *= SkillTree.Instance.DashCooldownMult;
+        yield return new WaitForSeconds(effectiveCD);
         canDash = true;
     }
 
@@ -338,7 +351,15 @@ public class PlayerController : MonoBehaviour
     }
 
     public void AddDivineFire(float amount) =>
-        divineFire = Mathf.Clamp(divineFire + amount, 0f, divineFireMax);
+        divineFire = Mathf.Clamp(divineFire + amount, 0f, DivineFireMax);
+
+    void Update_DivineFireRegen()
+    {
+        // FastRegen skill'i ile saniyede divine fire yenilenir
+        if (SkillTree.Instance == null) return;
+        float rate = SkillTree.Instance.DivineRegenRate;
+        if (rate > 0f) AddDivineFire(rate * Time.deltaTime);
+    }
 
     void UpdateAnimator()
     {

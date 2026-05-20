@@ -28,8 +28,15 @@ public class Fireball : MonoBehaviour
         if (enemy != null)
         {
             enemy.TakeDamage(damage, direction);
-            if (burnUnlocked && Random.value <= burnChance)
-                other.GetComponent<StatusEffectController>()?.ApplyBurn(burnDuration);
+            float chance   = burnChance;
+            float duration = burnDuration;
+            if (SkillTree.Instance != null)
+            {
+                chance   *= SkillTree.Instance.BurnChanceMult;
+                duration *= SkillTree.Instance.BurnDurationMult;
+            }
+            if (burnUnlocked && Random.value <= chance)
+                other.GetComponent<StatusEffectController>()?.ApplyBurn(duration);
             Destroy(gameObject);
             return;
         }

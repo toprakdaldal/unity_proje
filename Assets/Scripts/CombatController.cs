@@ -110,6 +110,20 @@ public class CombatController : MonoBehaviour
             dmg += SkillTree.Instance.ExtraDamage;
         if (RingController.Instance != null)
             dmg += Mathf.RoundToInt(RingController.Instance.GetBonus(RingEffect.BonusDamage));
+
+        // Berserk: %30 canın altındaysa +%40 hasar
+        if (SkillTree.Instance != null && SkillTree.Instance.HasBerserk)
+        {
+            var hc = GetComponent<HealthController>();
+            if (hc != null && hc.HealthPercent <= 0.3f) dmg = Mathf.RoundToInt(dmg * 1.4f);
+        }
+
+        // Critical Hit: %25 ihtimalle 2x
+        if (SkillTree.Instance != null && SkillTree.Instance.CritChance > 0f)
+        {
+            if (Random.value <= SkillTree.Instance.CritChance) dmg *= 2;
+        }
+
         // Kart bonusu: çarpan olarak uygulanır
         if (CardSystem.Instance != null)
         {
@@ -119,11 +133,39 @@ public class CombatController : MonoBehaviour
         return dmg;
     }
 
+    Weapon GetWeapon() => WeaponController.Instance?.Current;
+
     IEnumerator AttackRoutine(bool applyPoison = false)
     {
         canAttack = false;
-        HitEnemies(attackPoint.position, attackRadius, FinalMeleeDamage(attackDamage), applyPoison);
-        yield return new WaitForSeconds(attackCooldown);
+
+        var w          = GetWeapon();
+        int   dmg      = w != null ? w.damage         : attackDamage;
+        float radius   = w != null ? w.attackRadius   : attackRadius;
+        float cooldown = w != null ? w.attackCooldown : attackCooldown;
+        int   hits     = w != null ? Mathf.Max(1, w.hitCount) : 1;
+
+        // DoubleStrike skill'i +1 hit ekler
+        if (SkillTree.Instance != null) hits += SkillTree.Instance.ExtraHitCount;
+
+        for (int i = 0; i < hits; i++)
+        {
+            HitEnemies(attackPoint.position, radius, FinalMeleeDamage(dmg), applyPoison);
+            if (w != null && w.flashColor != Color.white)
+                StartCoroutine(FlashColor(w.flashColor));
+
+            // Çekiç şok dalgası efekti
+            if (w != null && w.createsShockwave)
+            {
+                CameraController.Instance?.Shake(0.15f, 0.18f);
+                HitStop.Instance?.Stop(0.08f);
+            }
+
+            if (hits > 1 && i < hits - 1)
+                yield return new WaitForSeconds(0.12f);
+        }
+
+        yield return new WaitForSeconds(cooldown);
         canAttack = true;
     }
 
@@ -172,6 +214,9 @@ public class CombatController : MonoBehaviour
             {
                 hitAny = true;
                 enemy.OnDied += () => playerController?.AddDivineFire(divineFirePerKill);
+                // Vampire skill: öldürmede iyileş
+                if (SkillTree.Instance != null && SkillTree.Instance.HasVampire)
+                    enemy.OnDied += () => GetComponent<HealthController>()?.Heal(5);
                 enemy.TakeDamage(damage, dir);
 
                 if (applyPoison && poisonUnlocked && Random.value <= poisonChance)
@@ -227,10 +272,13 @@ public class CombatController : MonoBehaviour
         // Turuncu flaş efekti
         StartCoroutine(FlashColor(new Color(1f, 0.5f, 0f)));
 
-        // Geniş alanda hasar ver
+        // Geniş alanda hasar ver (Apocalypse skill'i radius'u büyütür)
         Transform point = fireAttackPoint != null ? fireAttackPoint : attackPoint;
+        float effectiveRadius = fireAttackRadius;
+        if (SkillTree.Instance != null) effectiveRadius *= SkillTree.Instance.FireRadiusMult;
+
         Collider2D[] hits = Physics2D.OverlapCircleAll(
-            point.position, fireAttackRadius, enemyLayer);
+            point.position, effectiveRadius, enemyLayer);
 
         foreach (var hit in hits)
         {
@@ -251,7 +299,7 @@ public class CombatController : MonoBehaviour
 
         // Kırılabilir kasalar
         Collider2D[] crateHitsX = Physics2D.OverlapCircleAll(
-            point.position, fireAttackRadius, breakableLayer);
+            point.position, effectiveRadius, breakableLayer);
         foreach (var hit in crateHitsX)
             hit.GetComponent<BreakableCrate>()?.TakeDamage(fireAttackDamage);
 
@@ -270,7 +318,16 @@ public class CombatController : MonoBehaviour
         Transform spawnPoint = fireballSpawnPoint != null ? fireballSpawnPoint : attackPoint;
         Vector2   dir        = playerController.IsFacingRight ? Vector2.right : Vector2.left;
 
-        GameObject fb = Instantiate(fireballPrefab, spawnPoint.position, Quaternion.identity);
+        SpawnFireball(spawnPoint.position, dir, 0f);
+
+        // DoubleFireball: ikinci ateş topu, hafif gecikme + dikey kayma
+        if (SkillTree.Instance != null && SkillTree.Instance.HasDoubleFireball)
+            StartCoroutine(DelayedSecondFireball(spawnPoint.position, dir));
+    }
+
+    void SpawnFireball(Vector3 pos, Vector2 dir, float yOffset)
+    {
+        GameObject fb = Instantiate(fireballPrefab, pos + Vector3.up * yOffset, Quaternion.identity);
         var fireball = fb.GetComponent<Fireball>();
         if (fireball != null)
         {
@@ -278,6 +335,12 @@ public class CombatController : MonoBehaviour
             fireball.burnUnlocked = burnUnlocked;
             fireball.Init(dir);
         }
+    }
+
+    IEnumerator DelayedSecondFireball(Vector3 pos, Vector2 dir)
+    {
+        yield return new WaitForSeconds(0.12f);
+        SpawnFireball(pos, dir, 0.4f);
     }
 
     IEnumerator FlashColor(Color color)

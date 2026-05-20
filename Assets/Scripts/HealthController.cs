@@ -34,6 +34,11 @@ public class HealthController : MonoBehaviour
         if (isInvincible || currentHealth <= 0) return;
         if (ghostStep != null && ghostStep.IsGhosting) return; // ghost modda hasar alma
 
+        // Phantom skill: dash sırasında hasar alma
+        if (playerController != null && playerController.IsDashing &&
+            SkillTree.Instance != null && SkillTree.Instance.HasPhantom)
+            return;
+
         // Yüzükten hasar azaltma
         if (RingController.Instance != null)
         {
