@@ -18,9 +18,9 @@ public enum SkillID
     Apocalypse,
     // ── Hareket ──
     QuickStep,
-    HigherJump,
-    DoubleJump,
-    FastDash,
+    Glide,        // eski: HigherJump
+    FastFall,     // eski: DoubleJump
+    DashStrike,   // eski: FastDash
     Phantom
 }
 
@@ -96,8 +96,8 @@ public class SkillTree : MonoBehaviour
     public float FireRadiusMult  => IsUnlocked(SkillID.Apocalypse) ? 1.5f : 1f;
 
     public float ExtraMoveSpeed  => IsUnlocked(SkillID.QuickStep) ? 1.5f : 0f;
-    public float JumpForceMult   => IsUnlocked(SkillID.HigherJump) ? 1.2f : 1f;
-    public bool  HasDoubleJump   => IsUnlocked(SkillID.DoubleJump);
-    public float DashCooldownMult => IsUnlocked(SkillID.FastDash) ? 0.6f : 1f;
+    public bool  HasGlide        => IsUnlocked(SkillID.Glide);
+    public bool  HasFastFall     => IsUnlocked(SkillID.FastFall);
+    public bool  HasDashStrike   => IsUnlocked(SkillID.DashStrike);
     public bool  HasPhantom      => IsUnlocked(SkillID.Phantom);
 }

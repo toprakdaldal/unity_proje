@@ -1,8 +1,9 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using TMPro;
 
-public class SkillSlotUI : MonoBehaviour
+public class SkillSlotUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
     [Header("── Skill ──")]
     public SkillID skillId = SkillID.None;
@@ -60,5 +61,19 @@ public class SkillSlotUI : MonoBehaviour
     void OnClick()
     {
         SkillTree.Instance?.TryUnlock(skillId);
+    }
+
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        if (SkillTree.Instance == null || SkillTooltip.Instance == null) return;
+        var node = SkillTree.Instance.GetNode(skillId);
+        bool isUnlocked = SkillTree.Instance.IsUnlocked(skillId);
+        bool canBuy     = SkillTree.Instance.CanUnlock(skillId);
+        SkillTooltip.Instance.Show(node, isUnlocked, canBuy);
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        SkillTooltip.Instance?.Hide();
     }
 }

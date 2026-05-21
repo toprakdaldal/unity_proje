@@ -28,6 +28,13 @@ public class PlayerController : MonoBehaviour
     [SerializeField] float dashCooldown   = 0.55f;
     [SerializeField] bool  dashInvincible = true;
 
+    [Header("── Skill Ayarları ──")]
+    [SerializeField] float glideGravityScale = 0.35f;  // Glide aktifken yer çekimi
+    [SerializeField] float fastFallSpeed     = -25f;   // FastFall hızı
+    [SerializeField] int   dashStrikeDamage  = 15;
+    [SerializeField] float dashStrikeRadius  = 0.8f;
+    [SerializeField] LayerMask dashStrikeLayer;
+
     [Header("── Wall Slide ──")]
     [SerializeField] float wallSlideSpeed = 1.8f;
 
@@ -126,6 +133,7 @@ public class PlayerController : MonoBehaviour
         UpdateDivineFire();
         Update_DivineFireRegen();
         ProcessActions();
+        UpdateSkillMechanics();
         UpdateAnimator();
         ClearFrameInput();
     }
@@ -230,14 +238,11 @@ public class PlayerController : MonoBehaviour
 
     void TryJump()
     {
-        float jumpMult = SkillTree.Instance != null ? SkillTree.Instance.JumpForceMult : 1f;
-        bool hasDoubleJumpSkill = SkillTree.Instance == null || SkillTree.Instance.HasDoubleJump;
-
         if (isWallSliding)                  { DoWallJump(); return; }
-        if (isGrounded || coyoteTimer > 0f) { DoJump(jumpForce * jumpMult); canDoubleJump = hasDoubleJumpSkill; return; }
-        if (canDoubleJump && hasDoubleJumpSkill)
+        if (isGrounded || coyoteTimer > 0f) { DoJump(jumpForce); canDoubleJump = true; return; }
+        if (canDoubleJump)
         {
-            DoJump(doubleJumpForce * jumpMult);
+            DoJump(doubleJumpForce);
             canDoubleJump = false;
             SafeTrigger(H_DoubleJump);
             if (doubleJumpParticles != null) doubleJumpParticles.Play();
@@ -286,9 +291,7 @@ public class PlayerController : MonoBehaviour
         if (dashInvincible)        SetInvincible(false);
         if (dashParticles != null) dashParticles.Stop();
 
-        float effectiveCD = dashCooldown;
-        if (SkillTree.Instance != null) effectiveCD *= SkillTree.Instance.DashCooldownMult;
-        yield return new WaitForSeconds(effectiveCD);
+        yield return new WaitForSeconds(dashCooldown);
         canDash = true;
     }
 
@@ -352,6 +355,68 @@ public class PlayerController : MonoBehaviour
 
     public void AddDivineFire(float amount) =>
         divineFire = Mathf.Clamp(divineFire + amount, 0f, DivineFireMax);
+
+    // ── Skill Mekanikleri: Glide, FastFall, DashStrike ─────────
+    float defaultGravity = -1f;
+
+    void UpdateSkillMechanics()
+    {
+        if (rb == null) return;
+        if (defaultGravity < 0f) defaultGravity = rb.gravityScale;
+
+        bool st = SkillTree.Instance != null;
+
+        // Glide: havada Space basılı tut → yer çekimi azalır
+        bool gliding = st && SkillTree.Instance.HasGlide
+            && !isGrounded && !isWallSliding && !isDashing
+            && rb.linearVelocityY < 0.5f
+            && Input.GetButton("Jump");
+
+        rb.gravityScale = gliding ? defaultGravity * glideGravityScale : defaultGravity;
+
+        // FastFall: havada S/Aşağı basınca hızlıca düş
+        if (st && SkillTree.Instance.HasFastFall
+            && !isGrounded && !isDashing
+            && Input.GetAxisRaw("Vertical") < -0.5f
+            && Input.GetKeyDown(KeyCode.S))
+        {
+            rb.linearVelocityY = fastFallSpeed;
+        }
+
+        // DashStrike: dash sırasında çevredeki düşmanlara hasar
+        if (st && SkillTree.Instance.HasDashStrike && isDashing)
+        {
+            Collider2D[] hits = Physics2D.OverlapCircleAll(
+                transform.position, dashStrikeRadius, dashStrikeLayer);
+            foreach (var hit in hits)
+            {
+                var eh = hit.GetComponent<EnemyHealth>();
+                if (eh != null && !dashHitEnemies.Contains(eh))
+                {
+                    Vector2 dir = (hit.transform.position - transform.position).normalized;
+                    eh.TakeDamage(dashStrikeDamage, dir);
+                    dashHitEnemies.Add(eh);
+                }
+
+                var boss = hit.GetComponent<BossController>();
+                if (boss != null && !dashHitBoss)
+                {
+                    Vector2 dir = (hit.transform.position - transform.position).normalized;
+                    boss.TakeDamage(dashStrikeDamage, dir);
+                    dashHitBoss = true;
+                }
+            }
+        }
+        else if (!isDashing)
+        {
+            // Dash bittiğinde listeyi temizle (yeni dash'te tekrar hasar verebilsin)
+            if (dashHitEnemies.Count > 0) dashHitEnemies.Clear();
+            dashHitBoss = false;
+        }
+    }
+
+    System.Collections.Generic.HashSet<EnemyHealth> dashHitEnemies = new System.Collections.Generic.HashSet<EnemyHealth>();
+    bool dashHitBoss = false;
 
     void Update_DivineFireRegen()
     {

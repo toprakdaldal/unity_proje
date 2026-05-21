@@ -33,6 +33,11 @@ public class EnemyHealth : MonoBehaviour
     {
         if (currentHealth <= 0) return;
 
+        // Tellal çağırma sırasında hasarı azalt
+        var summoner = GetComponent<SummonerEnemy>();
+        if (summoner != null && summoner.IsChanneling)
+            amount = Mathf.Max(1, Mathf.RoundToInt(amount * (1f - summoner.DamageReduction)));
+
         currentHealth -= amount;
         StartCoroutine(FlashWhite());
         StartCoroutine(Knockback(hitDirection));
