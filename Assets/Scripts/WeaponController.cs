@@ -8,8 +8,6 @@ public class WeaponController : MonoBehaviour
     [Header("── Silahlar ──")]
     public List<Weapon> weapons = new List<Weapon>();
 
-    [Header("── Tuş ──")]
-    [SerializeField] KeyCode switchKey = KeyCode.E;
 
     int currentIndex = 0;
 
@@ -37,7 +35,7 @@ public class WeaponController : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(switchKey) && weapons.Count > 1)
+        if (InputBindings.GetKeyDown(InputAction.Interact) && weapons.Count > 1)
             SwitchNext();
     }
 

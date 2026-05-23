@@ -66,8 +66,8 @@ public class CombatController : MonoBehaviour
     {
         bool stompActive = stomp != null && stomp.IsStomping;
 
-        // Z tuşu basıldığında şarjı başlat
-        if (Input.GetKeyDown(KeyCode.Z) && canAttack && !stompActive)
+        // Saldırı tuşu basıldığında şarjı başlat
+        if (InputBindings.GetKeyDown(InputAction.Attack) && canAttack && !stompActive)
         {
             isCharging  = true;
             chargeTimer = 0f;
@@ -81,8 +81,8 @@ public class CombatController : MonoBehaviour
                 sr.color = Color.Lerp(Color.white, Color.yellow, chargeTimer / chargeTime);
         }
 
-        // Z bırakıldığında: yeterince tutulduysa Yankı Darbesi, değilse normal saldırı
-        if (Input.GetKeyUp(KeyCode.Z) && isCharging)
+        // Saldırı tuşu bırakıldığında: yeterince tutulduysa Yankı Darbesi, değilse normal saldırı
+        if (InputBindings.GetKeyUp(InputAction.Attack) && isCharging)
         {
             isCharging   = false;
             if (sr != null) sr.color = Color.white;
@@ -93,11 +93,11 @@ public class CombatController : MonoBehaviour
                 StartCoroutine(AttackRoutine(applyPoison: true));
         }
 
-        if (Input.GetKeyDown(KeyCode.X))
+        if (InputBindings.GetKeyDown(InputAction.DivineFire))
             StartCoroutine(FireAttackRoutine());
 
         fireballTimer -= Time.deltaTime;
-        if (Input.GetKeyDown(KeyCode.C) && fireballTimer <= 0f)
+        if (InputBindings.GetKeyDown(InputAction.Fireball) && fireballTimer <= 0f)
             ShootFireball();
     }
 

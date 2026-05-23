@@ -6,8 +6,6 @@ public class RingPickup : MonoBehaviour
     [Header("── Yüzük ──")]
     [SerializeField] Ring ring;
 
-    [Header("── Toplama ──")]
-    [SerializeField] KeyCode pickupKey = KeyCode.E;
 
     [Header("── İpucu UI ──")]
     [SerializeField] GameObject hintObject;   // "E: Al" + isim + açıklama paneli
@@ -37,7 +35,7 @@ public class RingPickup : MonoBehaviour
         transform.Rotate(0f, 0f, rotateSpeed * Time.deltaTime);
 
         // Toplama
-        if (playerNearby && !collected && Input.GetKeyDown(pickupKey))
+        if (playerNearby && !collected && InputBindings.GetKeyDown(InputAction.Interact))
             Collect();
     }
 

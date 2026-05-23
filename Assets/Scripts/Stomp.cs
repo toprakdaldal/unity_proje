@@ -39,7 +39,7 @@ public class Stomp : MonoBehaviour
         if (isStomping) return;
 
         bool downHeld = Input.GetAxisRaw("Vertical") < -0.5f;
-        bool zPressed  = Input.GetKeyDown(KeyCode.Z);
+        bool zPressed  = InputBindings.GetKeyDown(InputAction.Attack);
 
         if (!playerController.IsGrounded && downHeld && zPressed)
             StartCoroutine(StompRoutine());

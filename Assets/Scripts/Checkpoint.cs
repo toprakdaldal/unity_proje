@@ -24,12 +24,14 @@ public class Checkpoint : MonoBehaviour
     void Update()
     {
         if (!playerNearby) return;
-        if (Input.GetKeyDown(KeyCode.E))
+        if (isActivated) return;   // bir kere aktive edildikten sonra tekrar tepki vermesin
+        if (InputBindings.GetKeyDown(InputAction.Interact))
             Activate();
     }
 
     void Activate()
     {
+        if (isActivated) return;
         isActivated = true;
 
         // Checkpoint kaydet
@@ -62,7 +64,7 @@ public class Checkpoint : MonoBehaviour
     {
         if (!other.CompareTag("Player")) return;
         playerNearby = true;
-        if (hintObject != null) hintObject.SetActive(true);
+        if (!isActivated && hintObject != null) hintObject.SetActive(true);
     }
 
     void OnTriggerExit2D(Collider2D other)

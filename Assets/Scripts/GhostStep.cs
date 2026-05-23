@@ -38,7 +38,7 @@ public class GhostStep : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(activateKey) && currentCharges > 0 && !isGhosting)
+        if (InputBindings.GetKeyDown(InputAction.GhostStep) && currentCharges > 0 && !isGhosting)
             StartCoroutine(GhostRoutine());
     }
 
