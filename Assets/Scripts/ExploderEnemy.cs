@@ -3,10 +3,16 @@ using UnityEngine;
 
 public class ExploderEnemy : MonoBehaviour
 {
+    [Header("── Devriye ──")]
+    [SerializeField] Transform[] patrolPoints;
+    [SerializeField] float patrolSpeed = 1.5f;
+
     [Header("── Hareket ──")]
     [SerializeField] float chaseSpeed     = 3.5f;
     [SerializeField] float detectionRange = 7f;
     [SerializeField] float triggerRange   = 1.5f;   // bu mesafede sayım başlar
+
+    int currentPatrolIndex = 0;
 
     [Header("── Patlama ──")]
     [SerializeField] float countdownDuration = 1.2f;
@@ -41,6 +47,11 @@ public class ExploderEnemy : MonoBehaviour
 
         var p = GameObject.FindGameObjectWithTag("Player");
         if (p != null) player = p.transform;
+
+        // Player ile fiziksel çarpışmayı kapat
+        int playerLayer = LayerMask.NameToLayer("Player");
+        if (playerLayer >= 0)
+            Physics2D.IgnoreLayerCollision(gameObject.layer, playerLayer, true);
     }
 
     void Update()
@@ -53,8 +64,12 @@ public class ExploderEnemy : MonoBehaviour
         // Sayım sırasında hareket etmesin
         if (isCountingDown) return;
 
-        // Algılama menzilinde mi?
-        if (dist > detectionRange) return;
+        // Algılama menzilinde değilse devriye at
+        if (dist > detectionRange)
+        {
+            Patrol();
+            return;
+        }
 
         // Tetik mesafesine ulaştıysa patla
         if (dist <= triggerRange)
@@ -63,12 +78,32 @@ public class ExploderEnemy : MonoBehaviour
             return;
         }
 
-        // Aksi takdirde oyuncuya yaklaş
-        float dir = player.position.x > transform.position.x ? 1f : -1f;
-        if (rb != null) rb.linearVelocityX = dir * chaseSpeed;
+        // Aksi takdirde oyuncuya yaklaş — direkt pozisyon ile (fizik bypass)
+        transform.position = Vector2.MoveTowards(
+            transform.position, player.position, chaseSpeed * Time.deltaTime);
 
-        // Yüzü çevir — sprite'ın doğal yönüne göre
-        if (sr != null) sr.flipX = dir > 0f;
+        if (sr != null) sr.flipX = (transform.position.x - player.position.x) < 0f;
+    }
+
+    void Patrol()
+    {
+        if (patrolPoints == null || patrolPoints.Length == 0) return;
+
+        Transform target = patrolPoints[currentPatrolIndex];
+        if (target == null) return;
+
+        if (Vector2.Distance(transform.position, target.position) < 0.25f)
+        {
+            currentPatrolIndex++;
+            if (currentPatrolIndex >= patrolPoints.Length) currentPatrolIndex = 0;
+            target = patrolPoints[currentPatrolIndex];
+            if (target == null) return;
+        }
+
+        transform.position = Vector2.MoveTowards(
+            transform.position, target.position, patrolSpeed * Time.deltaTime);
+
+        if (sr != null) sr.flipX = (transform.position.x - target.position.x) < 0f;
     }
 
     IEnumerator CountdownAndExplode()

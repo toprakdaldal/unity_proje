@@ -16,7 +16,7 @@ TagManager:
   - Enemy
   - Breakable
   - MiniMap
-  - 
+  - Pickup
   - 
   - 
   - 
@@ -39,6 +39,21 @@ TagManager:
   - 
   - 
   m_SortingLayers:
+  - name: BG_Far
+    uniqueID: 2273637517
+    locked: 0
+  - name: BG_Mid
+    uniqueID: 3054019021
+    locked: 0
+  - name: BG_Mid2
+    uniqueID: 3715438799
+    locked: 0
+  - name: BG_Mid3
+    uniqueID: 2900321067
+    locked: 0
+  - name: BG_Near
+    uniqueID: 9600595
+    locked: 0
   - name: Default
     uniqueID: 0
     locked: 0

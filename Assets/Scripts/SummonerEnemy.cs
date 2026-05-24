@@ -4,10 +4,16 @@ using UnityEngine;
 
 public class SummonerEnemy : MonoBehaviour
 {
+    [Header("── Devriye ──")]
+    [SerializeField] Transform[] patrolPoints;
+    [SerializeField] float patrolSpeed = 1.5f;
+
     [Header("── Algılama ──")]
     [SerializeField] float detectionRange = 9f;
     [SerializeField] float fleeRange      = 5f;    // bu mesafeden yakınsa kaçar
     [SerializeField] float fleeSpeed      = 2.5f;
+
+    int currentPatrolIndex = 0;
 
     [Header("── Çağırma ──")]
     [SerializeField] GameObject[] summonPrefabs;   // çağrılabilecek düşman tipleri
@@ -51,6 +57,11 @@ public class SummonerEnemy : MonoBehaviour
         var p = GameObject.FindGameObjectWithTag("Player");
         if (p != null) player = p.transform;
 
+        // Player ile fiziksel çarpışmayı kapat
+        int playerLayer = LayerMask.NameToLayer("Player");
+        if (playerLayer >= 0)
+            Physics2D.IgnoreLayerCollision(gameObject.layer, playerLayer, true);
+
         summonTimer = summonInterval * 0.5f; // ilk çağırma daha hızlı
     }
 
@@ -64,21 +75,24 @@ public class SummonerEnemy : MonoBehaviour
 
         float dist = Vector2.Distance(transform.position, player.position);
 
-        if (dist > detectionRange) return;
+        if (dist > detectionRange)
+        {
+            Patrol();
+            return;
+        }
         if (isChanneling) return;
 
-        // Yakındaysa kaç
-        if (dist < fleeRange && rb != null)
+        // Yakındaysa oyuncudan KAÇIŞ yönünde uzaklaş
+        if (dist < fleeRange)
         {
-            float dir = player.position.x > transform.position.x ? -1f : 1f;
-            rb.linearVelocityX = dir * fleeSpeed;
-
-            // Yüzü oyuncuya çevir (kaçarken de bakıyor olsun)
+            float dirAway = player.position.x > transform.position.x ? -1f : 1f;
+            Vector3 fleeTarget = transform.position + new Vector3(dirAway * 2f, 0f, 0f);
+            transform.position = Vector2.MoveTowards(
+                transform.position, fleeTarget, fleeSpeed * Time.deltaTime);
             if (sr != null) sr.flipX = player.position.x > transform.position.x;
         }
-        else if (rb != null)
+        else
         {
-            rb.linearVelocityX = 0f;
             if (sr != null) sr.flipX = player.position.x > transform.position.x;
         }
 
@@ -137,6 +151,27 @@ public class SummonerEnemy : MonoBehaviour
         }
 
         isChanneling = false;
+    }
+
+    void Patrol()
+    {
+        if (patrolPoints == null || patrolPoints.Length == 0) return;
+
+        Transform target = patrolPoints[currentPatrolIndex];
+        if (target == null) return;
+
+        if (Vector2.Distance(transform.position, target.position) < 0.25f)
+        {
+            currentPatrolIndex++;
+            if (currentPatrolIndex >= patrolPoints.Length) currentPatrolIndex = 0;
+            target = patrolPoints[currentPatrolIndex];
+            if (target == null) return;
+        }
+
+        transform.position = Vector2.MoveTowards(
+            transform.position, target.position, patrolSpeed * Time.deltaTime);
+
+        if (sr != null) sr.flipX = (transform.position.x - target.position.x) < 0f;
     }
 
     void OnDestroy()

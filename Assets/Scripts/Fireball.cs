@@ -57,12 +57,18 @@ public class Fireball : MonoBehaviour
             return;
         }
 
-        // Oyuncu ve diğer mermileri yok say, geri kalan her şeyde yok ol (zemin, duvar vs.)
-        if (other.CompareTag("Player")) return;
-        if (other.GetComponent<Fireball>() != null) return;
-        if (other.GetComponent<EnemyProjectile>() != null) return;
-        if (other.GetComponent<BossProjectile>() != null) return;
+        // Oyuncu, diğer mermiler ve pickup'ları yok say
+        if (other.CompareTag("Player"))  return;
+        if (other.GetComponent<Fireball>()         != null) return;
+        if (other.GetComponent<EnemyProjectile>()  != null) return;
+        if (other.GetComponent<BossProjectile>()   != null) return;
+        if (other.GetComponent<HealthPotionPickup>() != null) return;
+        if (other.GetComponent<GhostStepPickup>()    != null) return;
+        if (other.GetComponent<RingPickup>()         != null) return;
+        if (other.GetComponent<EnchantmentPickup>()  != null) return;
+        if (other.GetComponent<AbilityPickup>()      != null) return;
 
+        // Zemin/duvar — yok ol
         Destroy(gameObject);
     }
 }
